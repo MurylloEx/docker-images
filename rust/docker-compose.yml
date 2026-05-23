@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_PORT: ${APP_PORT:-8000}
+        APP_UID: ${APP_UID:-1000}
+        APP_USER: ${APP_USER:-app}
+        APP_BIN: ${APP_BIN:-}
+    ports:
+      - "${HOST_PORT:-8000}:${APP_PORT:-8000}"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_PORT: ${APP_PORT:-8000}
+    volumes:
+      - .:/app
+    restart: unless-stopped
