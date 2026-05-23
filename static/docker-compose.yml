@@ -1,0 +1,19 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_PORT: ${APP_PORT:-8000}
+        APP_UID: ${APP_UID:-1000}
+        APP_USER: ${APP_USER:-nginx}
+    ports:
+      - "${HOST_PORT:-8000}:${APP_PORT:-8000}"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_PORT: ${APP_PORT:-8000}
+    volumes:
+      - .:/usr/share/nginx/html:ro
+    restart: unless-stopped
