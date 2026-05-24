@@ -9,6 +9,10 @@ on:
         description: GIT_BRANCH no Jenkins
         required: true
         default: main
+      stack:
+        description: STACK no Jenkins (rust, python, nestjs, static, php)
+        required: false
+        default: rust
 
 concurrency:
   group: jenkins-${{ github.ref }}
@@ -21,6 +25,7 @@ jobs:
       - name: Disparar build no Jenkins
         env:
           GIT_BRANCH: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.git_branch || github.ref_name }}
+          STACK: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.stack || vars.STACK || 'rust' }}
           JENKINS_URL: ${{ vars.JENKINS_URL }}
           JENKINS_JOB: ${{ vars.JENKINS_JOB_NAME }}
           JENKINS_USER: ${{ secrets.JENKINS_USER }}
@@ -42,6 +47,7 @@ jobs:
             -H "${CRUMB_FIELD}: ${CRUMB}" \
             -G "${BUILD_URL}" \
             --data-urlencode "token=${JENKINS_BUILD_TOKEN}" \
-            --data-urlencode "GIT_BRANCH=${GIT_BRANCH}"
+            --data-urlencode "GIT_BRANCH=${GIT_BRANCH}" \
+            --data-urlencode "STACK=${STACK}"
 
-          echo "Build disparado: ${GIT_BRANCH}"
+          echo "Build disparado: ${GIT_BRANCH} stack=${STACK}"

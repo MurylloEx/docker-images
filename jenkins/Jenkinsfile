@@ -1,0 +1,90 @@
+pipeline {
+    agent { label 'docker' }
+
+    parameters {
+        string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Branch to checkout')
+        choice(
+            name: 'STACK',
+            choices: ['rust', 'python', 'nestjs', 'static', 'php'],
+            description: 'Stack folder under repository root (docker-images layout)'
+        )
+        string(name: 'IMAGE_NAME', defaultValue: 'app', description: 'Docker image name (optional tagging)')
+        string(name: 'IMAGE_TAG', defaultValue: '', description: 'Image tag; empty = short GIT_COMMIT')
+    }
+
+    environment {
+        COMPOSE_PROJECT_NAME = "${params.STACK}-${env.BUILD_NUMBER}"
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "*/${params.GIT_BRANCH}"]],
+                    userRemoteConfigs: scm.userRemoteConfigs,
+                    extensions: scm.extensions ?: []
+                ])
+            }
+        }
+
+        stage('Validate stack') {
+            steps {
+                script {
+                    if (!fileExists("${params.STACK}/Dockerfile")) {
+                        error("Missing ${params.STACK}/Dockerfile — run dockerify or copy stack template")
+                    }
+                }
+            }
+        }
+
+        stage('Build image') {
+            steps {
+                dir(params.STACK) {
+                    sh 'docker compose build'
+                }
+            }
+        }
+
+        stage('Tag image') {
+            when {
+                expression { return params.IMAGE_NAME?.trim() }
+            }
+            steps {
+                script {
+                    def tag = params.IMAGE_TAG?.trim()
+                    if (!tag) {
+                        tag = env.GIT_COMMIT?.take(7) ?: 'latest'
+                    }
+                    def imageId = sh(
+                        script: "cd ${params.STACK} && docker compose images -q app",
+                        returnStdout: true
+                    ).trim()
+                    if (!imageId) {
+                        error('Could not resolve compose service image id (service name: app)')
+                    }
+                    sh "docker tag ${imageId} ${params.IMAGE_NAME}:${tag}"
+                    echo "Tagged ${params.IMAGE_NAME}:${tag}"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            sh "docker compose -f ${params.STACK}/docker-compose.yml down --remove-orphans 2>/dev/null || true"
+        }
+        success {
+            echo "Built stack=${params.STACK} branch=${params.GIT_BRANCH}"
+        }
+        failure {
+            echo "Build failed for stack=${params.STACK} branch=${params.GIT_BRANCH}"
+        }
+    }
+}

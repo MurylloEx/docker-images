@@ -3,6 +3,7 @@ stages:
 
 variables:
   JENKINS_JOB_NAME: smartru
+  STACK: rust
 
 .trigger_jenkins:
   stage: trigger
@@ -14,6 +15,7 @@ variables:
       set -euo pipefail
 
       GIT_BRANCH="${GIT_BRANCH:-${CI_COMMIT_REF_NAME}}"
+      STACK="${STACK:-rust}"
       JENKINS_JOB="${JENKINS_JOB_NAME:-smartru}"
       BASE="${JENKINS_URL%/}"
       BUILD_URL="${BASE}/job/${JENKINS_JOB}/buildWithParameters"
@@ -27,9 +29,10 @@ variables:
         -H "${CRUMB_FIELD}: ${CRUMB}" \
         -G "${BUILD_URL}" \
         --data-urlencode "token=${JENKINS_BUILD_TOKEN}" \
-        --data-urlencode "GIT_BRANCH=${GIT_BRANCH}"
+        --data-urlencode "GIT_BRANCH=${GIT_BRANCH}" \
+        --data-urlencode "STACK=${STACK}"
 
-      echo "Build disparado: ${GIT_BRANCH}"
+      echo "Build disparado: ${GIT_BRANCH} stack=${STACK}"
 
 trigger_jenkins:
   extends: .trigger_jenkins

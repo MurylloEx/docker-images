@@ -13,6 +13,7 @@ definitions:
             set -euo pipefail
 
             GIT_BRANCH="${GIT_BRANCH:-${BITBUCKET_BRANCH}}"
+            STACK="${STACK:-rust}"
             JENKINS_JOB="${JENKINS_JOB_NAME:-smartru}"
             BASE="${JENKINS_URL%/}"
             BUILD_URL="${BASE}/job/${JENKINS_JOB}/buildWithParameters"
@@ -26,9 +27,10 @@ definitions:
               -H "${CRUMB_FIELD}: ${CRUMB}" \
               -G "${BUILD_URL}" \
               --data-urlencode "token=${JENKINS_BUILD_TOKEN}" \
-              --data-urlencode "GIT_BRANCH=${GIT_BRANCH}"
+              --data-urlencode "GIT_BRANCH=${GIT_BRANCH}" \
+              --data-urlencode "STACK=${STACK}"
 
-            echo "Build disparado: ${GIT_BRANCH}"
+            echo "Build disparado: ${GIT_BRANCH} stack=${STACK}"
 
 pipelines:
   branches:
@@ -42,4 +44,6 @@ pipelines:
       - variables:
           - name: GIT_BRANCH
             default: main
+          - name: STACK
+            default: rust
       - step: *trigger-jenkins
