@@ -1,19 +1,23 @@
 # PHP
 
-Multi-stage image for **PHP 8.4 FPM Alpine** with **Nginx** and communication over a **Unix socket** (`/var/run/php/php-fpm.sock`). Framework-agnostic (Laravel, Symfony, plain PHP, etc.). No Apache.
+Multi-stage image for **PHP 8.4 FPM Alpine** + **Nginx** over a **Unix socket** (`/var/run/php/php-fpm.sock`). Framework-agnostic (Laravel, Symfony, plain PHP). No Apache.
+
+## What ships here
+
+- `Dockerfile`, `docker-compose.yml`, `.env.example`
+- [nginx/default.conf](nginx/default.conf), [php-fpm/zz-docker.conf](php-fpm/zz-docker.conf)
+- No application code (add your PHP project in this directory)
 
 ## Project requirements
 
-Place your PHP project in this directory root.
+Place your PHP project at this directory root.
 
-Typical layouts:
-
-| Layout | Document root | `WEB_ROOT` |
-|--------|---------------|------------|
+| Layout | Document root | `WEB_ROOT` (build arg) |
+|--------|---------------|-------------------------|
 | Laravel, Symfony | `public/index.php` | `public` (default) |
 | Plain PHP at repo root | `index.php` | `.` |
 
-Optional: `composer.json` / `composer.lock` for Composer dependencies (installed at build time when present).
+Optional `composer.json` / `composer.lock`: dependencies are installed at **image build** when present.
 
 ## Local usage
 
@@ -22,9 +26,11 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Access at `http://localhost:${HOST_PORT}` (default `8000`).
+URL: `http://localhost:${HOST_PORT}` (default `8000`).
 
-Compose mounts the project at `/var/www/html` for development.
+### Development volumes
+
+Compose mounts `.` → `/var/www/html` so code changes apply without rebuild (reload PHP-FPM / refresh as needed).
 
 ## Variables
 
@@ -34,19 +40,21 @@ Compose mounts the project at `/var/www/html` for development.
 | `HOST_PORT` | `8000` | Host port |
 | `APP_UID` | `1000` | User UID |
 | `APP_USER` | `www-data` | PHP-FPM and Nginx user |
-| `WEB_ROOT` | `public` | Web root path under `/var/www/html` (use `.` for project root) |
+| `WEB_ROOT` | `public` | Path under `/var/www/html` (`.` = project root) |
+
+Set `WEB_ROOT` in `.env` and pass it as a compose build arg (see `docker-compose.yml`).
 
 ## In-container architecture
 
 - `php-fpm` listens on `/var/run/php/php-fpm.sock`
-- `nginx` proxies FastCGI to the socket
-- The container starts PHP-FPM in the background, then Nginx in the foreground (`CMD`)
+- Nginx forwards PHP via FastCGI
+- Startup: `php-fpm -D`, then `nginx -g 'daemon off;'` (`ENTRYPOINT` cleared)
 
-## Installed PHP extensions
+## PHP extensions
 
 `pdo_mysql`, `zip`, `intl`, `opcache`, `bcmath`, `pcntl`, `gd`
 
-## Manual build
+## Commands
 
 ```bash
 docker compose build
@@ -55,4 +63,4 @@ docker compose up
 
 ## CI
 
-Use `STACK=php` when triggering Jenkins. See [root README](../README.md#cicd).
+Use `STACK=php` when triggering Jenkins. See [root README](../README.md#cicd-jenkins).

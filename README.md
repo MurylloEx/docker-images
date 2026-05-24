@@ -1,16 +1,18 @@
 # docker-images
 
-Multi-stage Docker images (Alpine) ready to host applications, with `docker-compose`, `.env.example`, and CI templates that trigger builds on an **external Jenkins** instance.
+Multi-stage Docker images (Alpine) ready to host applications. Each stack folder ships **only** the image plumbing (`Dockerfile`, `docker-compose.yml`, `.env.example`, and stack docs). **Add your application code** in that folder before building.
+
+Default container port is **8000** (`APP_PORT`). Map another host port with `HOST_PORT` in `.env`.
 
 ## Stacks
 
 | Stack | Directory | Description |
 |-------|-----------|-------------|
-| Rust | [rust/](rust/) | Release build on `rust:alpine`, runtime on `alpine` |
-| Python | [python/](python/) | ASGI with Uvicorn (`alpine:3.21` + Python 3 via `apk`) |
-| NestJS | [nestjs/](nestjs/) | Node LTS Alpine, `dist/` build |
-| Static | [static/](static/) | HTML/CSS/JS served by Nginx |
-| PHP | [php/](php/) | Nginx + PHP-FPM via Unix socket (framework-agnostic) |
+| Rust | [rust/](rust/) | Release build on `rust:1.85-alpine`, minimal `alpine:3.21` runtime |
+| Python | [python/](python/) | ASGI with Uvicorn (`alpine:3.21`, Python 3 via `apk`) |
+| NestJS | [nestjs/](nestjs/) | Node LTS Alpine, `npm ci` + `npm run build`, production runtime |
+| Static | [static/](static/) | Static assets or SPA `dist/` served by Nginx Alpine |
+| PHP | [php/](php/) | PHP 8.4 FPM + Nginx over Unix socket (framework-agnostic) |
 
 ## Quick start
 
@@ -20,78 +22,35 @@ cp .env.example .env
 docker compose up --build
 ```
 
-The default port is **8000** inside the container (`APP_PORT`). On the host, set `HOST_PORT` in `.env`.
+Open `http://localhost:${HOST_PORT}` (default `http://localhost:8000`).
 
 ## Common variables
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `APP_PORT` | `8000` | Container internal port (build + runtime) |
-| `HOST_PORT` | `8000` | Published host port |
+| `APP_PORT` | `8000` | Port inside the container (build arg + runtime) |
+| `HOST_PORT` | `8000` | Published port on the host |
 | `APP_UID` | `1000` | Non-root user UID |
 | `APP_USER` | (per stack) | Container username |
 
-Changing `APP_PORT` requires an image **rebuild** (Nginx and other configs use build args).
+Changing `APP_PORT` requires an image **rebuild** (Nginx and similar configs are applied at build time).
 
-## CI/CD
+## What each folder contains
 
-Image builds run on **Jenkins**. GitHub Actions and Bitbucket only **trigger** the remote job.
+| Path | Purpose |
+|------|---------|
+| `Dockerfile` | Multi-stage image definition |
+| `docker-compose.yml` | Local run and port mapping |
+| `.env.example` | Copy to `.env` and adjust |
+| `README.md` | Stack-specific requirements |
 
-| Template | Path |
-|----------|------|
-| Jenkinsfile | [templates/Jenkinsfile](templates/Jenkinsfile) |
-| GitHub Actions | [templates/github-actions/trigger-jenkins.yml](templates/github-actions/trigger-jenkins.yml) |
-| Bitbucket Pipelines | [templates/bitbucket-pipelines.yml](templates/bitbucket-pipelines.yml) |
+Application source code (`src/`, `package.json`, `Cargo.toml`, etc.) is **not** included—you add it per project.
 
-### Installing the templates
+## CI/CD (Jenkins)
 
-| Platform | Source | Destination in your repository |
-|----------|--------|--------------------------------|
-| GitHub Actions | `templates/github-actions/trigger-jenkins.yml` | `.github/workflows/trigger-jenkins.yml` |
-| Bitbucket | `templates/bitbucket-pipelines.yml` | `bitbucket-pipelines.yml` (root) |
-| Jenkins | `templates/Jenkinsfile` | **Pipeline script from SCM** job |
+Image builds are intended to run on **Jenkins** (or any agent with Docker). GitHub Actions / Bitbucket can trigger a remote Jenkins job via `buildWithParameters` when you add workflow templates.
 
-On Jenkins, enable **Trigger builds remotely** or use basic authentication with an API token on `buildWithParameters`. Job parameters must match those defined in the Jenkinsfile (`STACK`, `GIT_COMMIT`, etc.).
-
-### Jenkins setup
-
-1. Create a **Pipeline** job with **Pipeline script from SCM**, script path `templates/Jenkinsfile`.
-2. Parameters are defined via `properties([parameters([...])])` in the Jenkinsfile (the first build may ignore them; they appear from the second build onward).
-3. Install plugins: Pipeline, Git, Docker (agent with Docker socket).
-4. Agent with label `docker` (adjust in the Jenkinsfile if needed).
-5. For registry push, configure the `docker-registry` credential (Username with password).
-
-### Secrets / variables on Git providers
-
-**GitHub** (Settings → Secrets and variables):
-
-| Secret / Variable | Description |
-|-------------------|-------------|
-| `JENKINS_URL` | Base URL, e.g. `https://jenkins.example.com` |
-| `JENKINS_USER` | User with build permission |
-| `JENKINS_API_TOKEN` | User API token |
-| `JENKINS_JOB_NAME` (variable) | Job name, e.g. `docker-images-build` |
-| `JENKINS_BUILD_TOKEN` (secret, optional) | Job `token` parameter |
-
-**Bitbucket** (Repository variables, secured):
-
-| Variable | Description |
-|----------|-------------|
-| `JENKINS_URL` | Jenkins base URL |
-| `JENKINS_USER` | Username |
-| `JENKINS_API_TOKEN` | API token |
-| `JENKINS_JOB_NAME` | Job name |
-| `JENKINS_BUILD_TOKEN` | Optional job token |
-
-### Parameters sent to Jenkins
-
-| Parameter | Description |
-|-----------|-------------|
-| `STACK` | `rust`, `python`, `nestjs`, `static`, `php` |
-| `GIT_COMMIT` | Source commit SHA |
-| `GIT_BRANCH` | Source branch |
-| `SOURCE_REPO` | Source repository |
-| `IMAGE_TAG` | Image tag (optional) |
+Typical Jenkins parameter: `STACK` = `rust`, `python`, `nestjs`, `static`, or `php`.
 
 ## Repository structure
 
@@ -101,12 +60,10 @@ On Jenkins, enable **Trigger builds remotely** or use basic authentication with 
 ├── python/
 ├── nestjs/
 ├── static/
-├── php/
-└── templates/
-    ├── Jenkinsfile
-    ├── bitbucket-pipelines.yml
-    └── github-actions/
-        └── trigger-jenkins.yml
+│   └── nginx/
+└── php/
+    ├── nginx/
+    └── php-fpm/
 ```
 
 ## License
