@@ -31,7 +31,9 @@ RUN apk add --no-cache python3 \
 
 WORKDIR /app
 
-COPY --from=builder /install /usr/local
+COPY --from=builder /install/bin /usr/local/bin
+
+COPY --from=builder /install/lib/python3.12/site-packages /usr/lib/python3.12/site-packages
 
 COPY --chown=${APP_USER}:${APP_USER} . .
 
