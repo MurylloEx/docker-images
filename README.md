@@ -1,5 +1,7 @@
 # docker-images
 
+[![skills.sh](https://skills.sh/b/MurylloEx/docker-images)](https://skills.sh/MurylloEx/docker-images)
+
 Multi-stage Docker images (Alpine) ready to host applications. Each stack folder ships **only** the image plumbing (`Dockerfile`, `docker-compose.yml`, `.env.example`, and stack docs). **Add your application code** in that folder before building.
 
 Default container port is **8000** (`APP_PORT`). Map another host port with `HOST_PORT` in `.env`.
@@ -63,6 +65,12 @@ See [jenkins/README.md](jenkins/README.md) for secrets, variables, and triggers.
 ## Agent skill: dockerify
 
 Use the [dockerify](skills/dockerify/SKILL.md) skill in Cursor to dockerize an application with these stacks and wire Jenkins (`GIT_BRANCH`, `STACK`). It documents layout, env vars, validation, and CI integration.
+
+Install via [skills.sh](https://skills.sh/):
+
+```bash
+npx skills add MurylloEx/docker-images --skill dockerify -a cursor -y
+```
 
 ## Repository structure
 
