@@ -1,0 +1,45 @@
+image: python:3-alpine
+
+options:
+  max-time: 10
+
+definitions:
+  steps:
+    - step: &trigger-jenkins
+        name: Disparar build no Jenkins
+        script:
+          - apk add --no-cache curl
+          - |
+            set -euo pipefail
+
+            GIT_BRANCH="${GIT_BRANCH:-${BITBUCKET_BRANCH}}"
+            JENKINS_JOB="${JENKINS_JOB_NAME:-smartru}"
+            BASE="${JENKINS_URL%/}"
+            BUILD_URL="${BASE}/job/${JENKINS_JOB}/buildWithParameters"
+            AUTH="${JENKINS_USER}:${JENKINS_API_TOKEN}"
+
+            CRUMB_JSON="$(curl -fsS -u "${AUTH}" "${BASE}/crumbIssuer/api/json")"
+            CRUMB="$(printf '%s' "${CRUMB_JSON}" | python3 -c "import sys,json; print(json.load(sys.stdin)['crumb'])")"
+            CRUMB_FIELD="$(printf '%s' "${CRUMB_JSON}" | python3 -c "import sys,json; print(json.load(sys.stdin)['crumbRequestField'])")"
+
+            curl -fsS -X POST -u "${AUTH}" \
+              -H "${CRUMB_FIELD}: ${CRUMB}" \
+              -G "${BUILD_URL}" \
+              --data-urlencode "token=${JENKINS_BUILD_TOKEN}" \
+              --data-urlencode "GIT_BRANCH=${GIT_BRANCH}"
+
+            echo "Build disparado: ${GIT_BRANCH}"
+
+pipelines:
+  branches:
+    main:
+      - step: *trigger-jenkins
+    dev:
+      - step: *trigger-jenkins
+
+  custom:
+    jenkins:
+      - variables:
+          - name: GIT_BRANCH
+            default: main
+      - step: *trigger-jenkins

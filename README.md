@@ -48,14 +48,23 @@ Application source code (`src/`, `package.json`, `Cargo.toml`, etc.) is **not** 
 
 ## CI/CD (Jenkins)
 
-Image builds are intended to run on **Jenkins** (or any agent with Docker). GitHub Actions / Bitbucket can trigger a remote Jenkins job via `buildWithParameters` when you add workflow templates.
+Image builds run on **Jenkins** (agent with Docker). Git hosting only triggers the job.
 
-Typical Jenkins parameter: `STACK` = `rust`, `python`, `nestjs`, `static`, or `php`.
+Copy the template for your platform from [jenkins/](jenkins/):
+
+| Platform | Template |
+|----------|----------|
+| GitHub Actions | [jenkins/github/jenkins.yml](jenkins/github/jenkins.yml) → `.github/workflows/jenkins.yml` |
+| Bitbucket | [jenkins/bitbucket/bitbucket-pipelines.yml](jenkins/bitbucket/bitbucket-pipelines.yml) → `bitbucket-pipelines.yml` |
+| GitLab | [jenkins/gitlab/gitlab-ci.yml](jenkins/gitlab/gitlab-ci.yml) → `.gitlab-ci.yml` |
+
+See [jenkins/README.md](jenkins/README.md) for secrets, variables, and triggers.
 
 ## Repository structure
 
 ```
 .
+├── jenkins/
 ├── rust/
 ├── python/
 ├── nestjs/

@@ -1,0 +1,43 @@
+stages:
+  - trigger
+
+variables:
+  JENKINS_JOB_NAME: smartru
+
+.trigger_jenkins:
+  stage: trigger
+  image: python:3-alpine
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - |
+      set -euo pipefail
+
+      GIT_BRANCH="${GIT_BRANCH:-${CI_COMMIT_REF_NAME}}"
+      JENKINS_JOB="${JENKINS_JOB_NAME:-smartru}"
+      BASE="${JENKINS_URL%/}"
+      BUILD_URL="${BASE}/job/${JENKINS_JOB}/buildWithParameters"
+      AUTH="${JENKINS_USER}:${JENKINS_API_TOKEN}"
+
+      CRUMB_JSON="$(curl -fsS -u "${AUTH}" "${BASE}/crumbIssuer/api/json")"
+      CRUMB="$(printf '%s' "${CRUMB_JSON}" | python3 -c "import sys,json; print(json.load(sys.stdin)['crumb'])")"
+      CRUMB_FIELD="$(printf '%s' "${CRUMB_JSON}" | python3 -c "import sys,json; print(json.load(sys.stdin)['crumbRequestField'])")"
+
+      curl -fsS -X POST -u "${AUTH}" \
+        -H "${CRUMB_FIELD}: ${CRUMB}" \
+        -G "${BUILD_URL}" \
+        --data-urlencode "token=${JENKINS_BUILD_TOKEN}" \
+        --data-urlencode "GIT_BRANCH=${GIT_BRANCH}"
+
+      echo "Build disparado: ${GIT_BRANCH}"
+
+trigger_jenkins:
+  extends: .trigger_jenkins
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_PIPELINE_SOURCE == "web"
