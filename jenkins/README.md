@@ -4,7 +4,9 @@ CI workflows that **only trigger** a Jenkins job (`buildWithParameters`). The Do
 
 Default Jenkins job name: `smartru` (override with `JENKINS_JOB_NAME` / `vars.JENKINS_JOB_NAME`).
 
-Parameter sent: `GIT_BRANCH` (plus `token` when using a build token).
+Parameters sent by default: `GIT_BRANCH` (plus `token` when using a build token).
+
+Add `STACK` (`rust`, `python`, `nestjs`, `static`, `php`) to `buildWithParameters` for multi-stack repos — see [Jenkinsfile](Jenkinsfile) and the [dockerify](../skills/dockerify/SKILL.md) skill.
 
 ## Files
 
@@ -24,11 +26,12 @@ Parameter sent: `GIT_BRANCH` (plus `token` when using a build token).
 
 ## Jenkins
 
-1. Job must accept parameters: `GIT_BRANCH`, and optionally `token` (if using **Trigger builds remotely**).
-2. Enable **Prevent Cross Site Request Forgery exploits** if you use the crumb flow (templates fetch `crumbIssuer` before POST).
-3. Agent with label `docker` (or adjust your Jenkinsfile) and Docker socket for image builds.
+1. Create a **Pipeline** job from [Jenkinsfile](Jenkinsfile) (SCM or copied into the app repo).
+2. Job parameters: `GIT_BRANCH`, `STACK` (choice), optional `IMAGE_NAME` / `IMAGE_TAG`, and optionally `token` (remote trigger).
+3. Enable **Prevent Cross Site Request Forgery exploits** if you use the crumb flow (templates fetch `crumbIssuer` before POST).
+4. Agent with label `docker` and Docker socket for `docker compose build` inside `{STACK}/`.
 
-Point the Jenkins job at this repository and pass `GIT_BRANCH` so the pipeline checks out the right ref before building stack images (`rust`, `python`, `nestjs`, `static`, `php`).
+Point the job at the repository that contains stack folders (`rust/`, `python/`, etc.) and pass `GIT_BRANCH` + `STACK` on each build.
 
 ## Secrets and variables
 
@@ -38,6 +41,7 @@ Point the Jenkins job at this repository and pass `GIT_BRANCH` so the pipeline c
 |------|------|-------------|
 | `JENKINS_URL` | Variable | Base URL, e.g. `https://jenkins.example.com` |
 | `JENKINS_JOB_NAME` | Variable | Job name (default in script: `smartru`) |
+| `STACK` | Variable | `rust`, `python`, `nestjs`, `static`, or `php` (default `rust`) |
 | `JENKINS_USER` | Secret | Jenkins user |
 | `JENKINS_API_TOKEN` | Secret | API token |
 | `JENKINS_BUILD_TOKEN` | Secret | Remote build token (if configured on the job) |

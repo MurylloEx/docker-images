@@ -60,11 +60,18 @@ Copy the template for your platform from [jenkins/](jenkins/):
 
 See [jenkins/README.md](jenkins/README.md) for secrets, variables, and triggers.
 
+## Agent skill: dockerify
+
+Use the [dockerify](skills/dockerify/SKILL.md) skill in Cursor to dockerize an application with these stacks and wire Jenkins (`GIT_BRANCH`, `STACK`). It documents layout, env vars, validation, and CI integration.
+
 ## Repository structure
 
 ```
 .
 ├── jenkins/
+│   └── Jenkinsfile
+├── skills/
+│   └── dockerify/
 ├── rust/
 ├── python/
 ├── nestjs/
