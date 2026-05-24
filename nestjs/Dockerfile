@@ -16,7 +16,9 @@ ARG APP_PORT=8000
 ARG APP_UID=1000
 ARG APP_USER=nestjs
 
-RUN addgroup -g ${APP_UID} -S nodejs \
+RUN deluser node 2>/dev/null || true \
+    && delgroup node 2>/dev/null || true \
+    && addgroup -g ${APP_UID} -S nodejs \
     && adduser -S ${APP_USER} -u ${APP_UID} -G nodejs
 
 WORKDIR /app
