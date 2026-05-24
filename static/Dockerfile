@@ -24,8 +24,8 @@ COPY nginx/default.conf /tmp/default.conf
 
 RUN sed "s/__APP_PORT__/${APP_PORT}/g" /tmp/default.conf > /etc/nginx/conf.d/default.conf \
     && rm /tmp/default.conf \
-    && sed -i 's|pid /run/nginx.pid;|pid /tmp/nginx.pid;|' /etc/nginx/nginx.conf \
-    && sed -i "s|user  nginx;|user ${APP_USER};|" /etc/nginx/nginx.conf \
+    && sed -i 's|pid .*nginx.pid;|pid /tmp/nginx.pid;|' /etc/nginx/nginx.conf \
+    && sed -i '/^user /d' /etc/nginx/nginx.conf \
     && chown -R ${APP_USER}:${APP_USER} /var/cache/nginx /var/log/nginx /etc/nginx/conf.d /tmp
 
 USER ${APP_USER}
