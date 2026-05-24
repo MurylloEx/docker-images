@@ -1,16 +1,19 @@
-# PHP Laravel
+# PHP
 
-Multi-stage image for **Laravel** with **PHP 8.4 FPM Alpine**, **Nginx**, and communication over a **Unix socket** (`/var/run/php/php-fpm.sock`). No Apache.
+Multi-stage image for **PHP 8.4 FPM Alpine** with **Nginx** and communication over a **Unix socket** (`/var/run/php/php-fpm.sock`). Framework-agnostic (Laravel, Symfony, plain PHP, etc.). No Apache.
 
 ## Project requirements
 
-Place a Laravel project in this directory root:
+Place your PHP project in this directory root.
 
-- `composer.json` / `composer.lock`
-- `public/` (Nginx document root)
-- `artisan`, `app/`, `config/`, etc.
+Typical layouts:
 
-Nginx points to `/var/www/html/public`. Laravel routes use `try_files` + `index.php`.
+| Layout | Document root | `WEB_ROOT` |
+|--------|---------------|------------|
+| Laravel, Symfony | `public/index.php` | `public` (default) |
+| Plain PHP at repo root | `index.php` | `.` |
+
+Optional: `composer.json` / `composer.lock` for Composer dependencies (installed at build time when present).
 
 ## Local usage
 
@@ -31,6 +34,7 @@ Compose mounts the project at `/var/www/html` for development.
 | `HOST_PORT` | `8000` | Host port |
 | `APP_UID` | `1000` | User UID |
 | `APP_USER` | `www-data` | PHP-FPM and Nginx user |
+| `WEB_ROOT` | `public` | Web root path under `/var/www/html` (use `.` for project root) |
 
 ## In-container architecture
 
@@ -49,13 +53,6 @@ docker compose build
 docker compose up
 ```
 
-After the first `up` with a Laravel project:
-
-```bash
-docker compose exec app php artisan key:generate
-docker compose exec app php artisan migrate
-```
-
 ## CI
 
-Use `STACK=php-laravel` when triggering Jenkins. See [root README](../README.md#cicd).
+Use `STACK=php` when triggering Jenkins. See [root README](../README.md#cicd).

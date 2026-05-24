@@ -10,7 +10,7 @@ Multi-stage Docker images (Alpine) ready to host applications, with `docker-comp
 | Python | [python/](python/) | ASGI with Uvicorn (`alpine:3.21` + Python 3 via `apk`) |
 | NestJS | [nestjs/](nestjs/) | Node LTS Alpine, `dist/` build |
 | Static | [static/](static/) | HTML/CSS/JS served by Nginx |
-| PHP Laravel | [php-laravel/](php-laravel/) | Nginx + PHP-FPM via Unix socket |
+| PHP | [php/](php/) | Nginx + PHP-FPM via Unix socket (framework-agnostic) |
 
 ## Quick start
 
@@ -87,7 +87,7 @@ On Jenkins, enable **Trigger builds remotely** or use basic authentication with 
 
 | Parameter | Description |
 |-----------|-------------|
-| `STACK` | `rust`, `python`, `nestjs`, `static`, `php-laravel` |
+| `STACK` | `rust`, `python`, `nestjs`, `static`, `php` |
 | `GIT_COMMIT` | Source commit SHA |
 | `GIT_BRANCH` | Source branch |
 | `SOURCE_REPO` | Source repository |
@@ -101,7 +101,7 @@ On Jenkins, enable **Trigger builds remotely** or use basic authentication with 
 ├── python/
 ├── nestjs/
 ├── static/
-├── php-laravel/
+├── php/
 └── templates/
     ├── Jenkinsfile
     ├── bitbucket-pipelines.yml
